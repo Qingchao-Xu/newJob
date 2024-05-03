@@ -10,6 +10,7 @@ import org.xu.newjob.dao.LoginTicketMapper;
 import org.xu.newjob.dao.UserMapper;
 import org.xu.newjob.entity.LoginTicket;
 import org.xu.newjob.entity.User;
+import org.xu.newjob.util.HostHolder;
 import org.xu.newjob.util.MailClient;
 import org.xu.newjob.util.NewJobConstant;
 import org.xu.newjob.util.NewJobUtil;
@@ -30,6 +31,8 @@ public class UserService implements NewJobConstant {
     private MailClient mailClient;
     @Autowired
     private TemplateEngine templateEngine;
+    @Autowired
+    private HostHolder hostHolder;
     @Value("${newJob.path.domain}")
     private String domain;
     @Value("${server.servlet.context-path}")
@@ -156,5 +159,33 @@ public class UserService implements NewJobConstant {
 
     public LoginTicket findLoginTicket(String ticket) {
         return loginTicketMapper.selectByTicket(ticket);
+    }
+
+    public int updateHeader(int userId, String headerUrl) {
+        return userMapper.updateHeader(userId, headerUrl);
+    }
+
+    public Map<String, Object> updatePassword(String oldPassword, String newPassword) {
+        Map<String, Object> map = new HashMap<>();
+        // 判空
+        if (StringUtils.isBlank(oldPassword)) {
+            map.put("oldPasswordError", "原密码不能为空！");
+            return map;
+        }
+        if (StringUtils.isBlank(newPassword)) {
+            map.put("newPasswordError", "新密码不能为空！");
+            return map;
+        }
+        // 判断原始密码
+        User user = hostHolder.getUser();
+        String password = user.getPassword();
+        String salt = user.getSalt();
+        if (!password.equals(NewJobUtil.md5(oldPassword + salt))) {
+            map.put("oldPasswordError", "原密码错误！");
+            return map;
+        }
+        // 更改用户密码
+        userMapper.updatePassword(user.getId(), NewJobUtil.md5(newPassword + salt));
+        return map;
     }
 }

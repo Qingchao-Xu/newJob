@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <contextName>newJob</contextName>
-    <property name="LOG_PATH" value="D:/logData"/>
+    <property name="LOG_PATH" value="D:/data/log"/>
     <property name="APPDIR" value="newJob"/>
 
     <!-- error file -->
