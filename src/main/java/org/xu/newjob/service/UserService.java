@@ -188,4 +188,8 @@ public class UserService implements NewJobConstant {
         userMapper.updatePassword(user.getId(), NewJobUtil.md5(newPassword + salt));
         return map;
     }
+
+    public User findUserByName(String username) {
+        return userMapper.selectByName(username);
+    }
 }

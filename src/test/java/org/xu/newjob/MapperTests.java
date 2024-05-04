@@ -6,9 +6,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.xu.newjob.dao.DiscussPostMapper;
 import org.xu.newjob.dao.LoginTicketMapper;
+import org.xu.newjob.dao.MessageMapper;
 import org.xu.newjob.dao.UserMapper;
 import org.xu.newjob.entity.DiscussPost;
 import org.xu.newjob.entity.LoginTicket;
+import org.xu.newjob.entity.Message;
 import org.xu.newjob.entity.User;
 
 import java.util.Date;
@@ -24,6 +26,31 @@ public class MapperTests {
     private DiscussPostMapper discussPostMapper;
     @Autowired
     private LoginTicketMapper loginTicketMapper;
+    @Autowired
+    private MessageMapper messageMapper;
+
+    @Test
+    public void testSelectLetters() {
+        List<Message> messages = messageMapper.selectConversations(111, 0, 10);
+        for (Message message : messages) {
+            System.out.println(message);
+        }
+
+        int count = messageMapper.selectConversationCount(111);
+        System.out.println(count);
+
+        List<Message> list = messageMapper.selectLetters("111_112", 0, 10);
+        for (Message message : list) {
+            System.out.println(message);
+        }
+
+        count = messageMapper.selectLetterCount("111_112");
+        System.out.println(count);
+
+        count = messageMapper.selectLetterUnreadCount(131, "111_131");
+        System.out.println(count);
+
+    }
 
     @Test
     public void testSelectUser() {
