@@ -254,11 +254,86 @@ Page类能够计算当前页的起始行，总的页数回前端能够显示的�
 
 **7）发送私信**
 
+1. Dao 层添加插入私信、修改私信状态的方法。
+2. Service 层添加插入私信，修改私信状态为已读的方法。
+3. Controller 层添加发送私信请求的处理，接收发送目标的id和私信内容 。
+   - 判断发送目标用户是否存在。
+   - 构建 Message 对象，包含发送者id，接收者id，会话id（由两个用户id拼接成，小的在前），会话内容等。
+   - 调用 Service 层添加私信。
+   - 返回发送成功的 JSON 信息。
+4. 在处理私信详情的 Controller 中，添加一步，找到私信详情中未读的私信，调用 Service 将其改为已读。
+
 **8）统一异常处理**
+
+1. 将以状态码命名的文件放到error文件夹下，error文件夹放到 templates 目录下，当发生错误 Spring Boot 会自动返回错误页面。
+2. 在 Controller 层添加一个获取错误页面的方法。
+3. 使用 ControllerAdvice 注解声明一个 Controller 全局配置类。
+   - 在配置类中添加一个方法，使用 ExceptionHandler 注解声明，用于处理异常。
+   - 参数使用 Exception、request 和 response。
+   - 方法中记录异常日志。
+   - 判断请求是普通请求还是异步请求。通过 request 获取请求头中的“x-requested-with”来判断，
+   如果该值是“XMLHttpRequest”说明是异步请求，否则是普通请求。
+   - 如果是异步请求，返回一个表示错误的 JSON 字符串。如果是普通请求，重定向到错误页面。
 
 **9）统一记录日志**
 
+针对 Service 层来记录日志。使用 Spring AOP。
+
+1. 给切面类添加 Component 和 Aspect 注解。
+2. 使用 Pointcut 注解定义一个切点。
+3. 使用 Before 注解定义一个前置方法，用于在切点前的逻辑。
+4. 在前置方法中记录日志。
+
+
 ### 引入Redis
+
+**1）Spring 整合 Redis**
+
+1. pom 中导入 Redis 依赖。
+2. 在配置文件中对 Redis 参数进行配置，包括使用的库的编号，redis 主机和端口号。
+3. 新建一个 Redis 配置类。配置类中定义一个 Bean，装配一个 RedisTemplate<String, Object> 对象。方法的参数注入一个 Redis 连接工厂。
+   - 实例化 template，将连接工厂设置给 template 对象，使其具备访问数据库的能力。
+   - 配置存入数据库时，数据序列化的方式。RedisKey 的序列化方式为 String，value 的序列化方式为 json，Hash key 的序列化方式为 String，
+   Hash value 的序列化方式为 json。
+   - 调用 afterPropertiesSet 使配置生效，并返回 template 对象。
+4. 使用 template 对象就可以访问并操作 Redis 数据库。
+
+**2）点赞**
+
+使用 Redis 中的 set 结构，以帖子的id拼接成 redisKey，将点赞用户 id 存入 set 中。
+
+1. 新建工具类，用来拼接 RedisKey。工具类中添加方法，接收实体类型和实体id，将其拼接为 redisKey 并返回。
+2. 新建处理点赞的 Service 类。添加点赞方法，方法接收点赞用户id，实体类型和实体id。
+   - 使用工具类拼接 RedisKey。
+   - 从 Redis 中查询，判断用户是否已经点过赞。
+   - 如果已经点过赞，则为取消赞，从 redis 中将用户id删除。
+   - 否则，将用户id添加到 Redis 中。
+3. Service 类中添加查询实体点赞数量的方法。
+4. Service 层添加查询某用户是否对某个实体点过赞。
+5. 新建 Controller 类处理点赞请求。添加处理点赞请求的方法。接收前端的实体类型和实体id
+   - 从 hostHolder 中取出 userId，调用 Service 层的点赞方法。
+   - 调用 Service 层方法，查询点赞数量和当前用户的点赞状态。
+   - 将查询的点赞数量和点赞状态返回给前端。
+6. 前端处理点赞请求，和接收数据并展示。
+7. 处理首页请求的 Controller 需要更新，添加查询帖子点赞信息的逻辑。帖子详情的 Controller 也需要更新，添加查询帖子点赞和评论点赞信息的逻辑。
+
+
+**UV 和 DAU 的统计**
+1. 定义 Redis 的 Key，可以返回单日 UV 和 DAU 的 Key，或者区间 UV 和 DAU 的 Key。
+2. Service 层添加记录和查询 UV、DAU 的方法
+   - 记录 UV 的方法：使用 RedisTemplate 操作 HyperLogLog 数据类型，以当前日期拼接出 RedisKey，
+将指定 IP 计入该 UV。
+   - 查询区间 UV 的方法：从开始日期，遍历到结束日期，获取每一天记录 UV 的 RedisKey。使用 RedisTemplate 操作 HyperLogLog 数据类型，
+合并所有的RedisKey，放到一个新的区间 UV 的 RedisKey 中。返回区间 UV 的 RedisKey 中保存数数据总数。
+   - 记录 DAU 的方法：使用 RedisTemplate 操作 BitMap 数据类型，以当前日期拼接出 DAU 的 RedisKey，
+将指定用户 ID 作为索引，该位置设置为 1；
+   - 查询区间 DAU 的方法：从开始日期，遍历到结束日期，获取每一天记录 DAU 的 RedisKey。使用 RedisTemplate 操作 BitMap 数据类型， 
+将所有的 RedisKey 进行 or 运算，放到一个新的区间 DAU 的 RedisKey 中。使用 bitCount 返回区间 DAU 的 RedisKey 中保存的活跃用户量。
+3. 新建拦截器，在 preHandle 中调用 Service 层方法，统计 UV、DAU。配置拦截器，过滤静态资源。
+
+
+**优化网站性能**
+
 
 ### 引入Kafka
 
