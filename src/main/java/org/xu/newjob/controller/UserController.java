@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.xu.newjob.annotation.LoginRequired;
 import org.xu.newjob.entity.User;
+import org.xu.newjob.service.FollowService;
 import org.xu.newjob.service.LikeService;
 import org.xu.newjob.service.UserService;
 import org.xu.newjob.util.CookieUtil;
 import org.xu.newjob.util.HostHolder;
+import org.xu.newjob.util.NewJobConstant;
 import org.xu.newjob.util.NewJobUtil;
 
 import java.io.File;
@@ -31,7 +33,7 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/user")
-public class UserController {
+public class UserController implements NewJobConstant {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
@@ -48,6 +50,8 @@ public class UserController {
     private HostHolder hostHolder;
     @Autowired
     private LikeService likeService;
+    @Autowired
+    private FollowService followService;
 
     @PostConstruct // 构造函数之后执行
     private void init() {
@@ -151,6 +155,16 @@ public class UserController {
         model.addAttribute("user", user);
         int likeCount = likeService.findUserLikeCount(userId);
         model.addAttribute("likeCount", likeCount);
+        long followeeCount = followService.findFolloweeCount(userId, ENTITY_TYPE_USER);
+        model.addAttribute("followeeCount", followeeCount);
+        long followerCount = followService.findFollowerCount(ENTITY_TYPE_USER, userId);
+        model.addAttribute("followerCount", followerCount);
+        boolean hasFollowed = false;
+        if (hostHolder.getUser() != null) {
+            hasFollowed = followService.hasFollowed(hostHolder.getUser().getId(), ENTITY_TYPE_USER, userId);
+        }
+        model.addAttribute("hasFollowed", hasFollowed);
+
         return "/site/profile";
     }
 }
