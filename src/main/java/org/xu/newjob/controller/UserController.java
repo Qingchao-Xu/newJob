@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.xu.newjob.annotation.LoginRequired;
 import org.xu.newjob.entity.User;
+import org.xu.newjob.service.LikeService;
 import org.xu.newjob.service.UserService;
 import org.xu.newjob.util.CookieUtil;
 import org.xu.newjob.util.HostHolder;
@@ -45,6 +46,8 @@ public class UserController {
     private UserService userService;
     @Autowired
     private HostHolder hostHolder;
+    @Autowired
+    private LikeService likeService;
 
     @PostConstruct // 构造函数之后执行
     private void init() {
@@ -53,7 +56,6 @@ public class UserController {
         if (!dir.exists()) {
             dir.mkdirs();
         }
-//        System.out.println("创建文件夹");
     }
 
 
@@ -138,5 +140,17 @@ public class UserController {
         userService.logout(ticket);
         hostHolder.clear();
         return "/site/operate-result";
+    }
+
+    @RequestMapping(value = "/profile/{userId}", method = RequestMethod.GET)
+    public String getProfilePage(@PathVariable("userId") int userId, Model model) {
+        User user = userService.findUserById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        model.addAttribute("user", user);
+        int likeCount = likeService.findUserLikeCount(userId);
+        model.addAttribute("likeCount", likeCount);
+        return "/site/profile";
     }
 }
