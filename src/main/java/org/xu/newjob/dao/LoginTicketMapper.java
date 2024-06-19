@@ -3,6 +3,7 @@ package org.xu.newjob.dao;
 import org.apache.ibatis.annotations.*;
 import org.xu.newjob.entity.LoginTicket;
 
+@Deprecated
 @Mapper
 public interface LoginTicketMapper {
 
