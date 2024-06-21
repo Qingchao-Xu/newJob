@@ -453,10 +453,25 @@ Page类能够计算当前页的起始行，总的页数回前端能够显示的�
 3. 新建拦截器，在 preHandle 中调用 Service 层方法，统计 UV、DAU。配置拦截器，过滤静态资源。
 
 
-**优化网站性能**
-
-
 ### 引入Kafka
+
+下载 Kafka 并解压，配置 zookeeper 产生的数据存放的路径。配置 Kafka 日志文件存放的位置。
+
+按照配置启动 Kafka 自带的 zookeeper。按照配置启动 Kafka。
+
+**1）Spring 整合 Kafka**
+1. pom 文件中引入 Kafka 依赖。
+2. 项目配置文件中配置 Kafka，配置服务器ip和端口，配置消费者的 group id，配置消费者自动提交。配置自动提交的频率 3000 毫秒。
+配置 Kafka 生产者的序列化方法，和消费者的反序列化方法。添加实体类包为 Kafka 序列化信赖的包。
+
+**2）发送系统通知**
+1. 封装事件类，包含属性：话题、用户 id、实体类型、实体 id、实体所属用户 id、map（用来存储额外的数据）
+2. 创建生产者类，添加发布事件的方法。将事件对象通过 KafkaTemplate 发送出去。
+3. 创建消费者类，添加监听消息的方法，监听评论、点赞、关注三种主题。
+   - 获取监听到的 Event 对象。
+   - 根据 Event 对象构建 Message 对象。
+   - 将 Message 对象存入数据库中。
+4. 重构 Controller 层的逻辑。在点赞、关注、评论方法中，使用生产者来发布对应的事件。
 
 ### 引入ElasticSearch
 
@@ -502,3 +517,5 @@ spring.mail.port=邮箱smtp端口（大部分邮箱的端口都是465）
 spring.mail.username=邮箱名称
 spring.mail.password=邮箱密码
 ```
+
+先启动 Kafka 自带的 zookeeper，再启动 Kafka，再启动项目。如果启动项目后，Kafka 被强制关闭，删除 Kafka 的日志文件即可。

@@ -7,8 +7,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.xu.newjob.entity.Event;
 import org.xu.newjob.entity.Page;
 import org.xu.newjob.entity.User;
+import org.xu.newjob.event.EventProducer;
 import org.xu.newjob.service.FollowService;
 import org.xu.newjob.service.UserService;
 import org.xu.newjob.util.HostHolder;
@@ -27,12 +29,23 @@ public class FollowController implements NewJobConstant {
     private FollowService followService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private EventProducer eventProducer;
 
     @RequestMapping(value = "/follow", method = RequestMethod.POST)
     @ResponseBody
     public String follow(int entityType, int entityId) {
         User user = hostHolder.getUser();
         followService.follow(user.getId(), entityType, entityId);
+
+        Event event = new Event()
+                .setTopic(TOPIC_FOLLOW)
+                .setUserId(user.getId())
+                .setEntityType(entityType)
+                .setEntityId(entityId)
+                .setEntityUserId(entityId);
+        eventProducer.fireEvent(event);
+
         return NewJobUtil.getJSONString(0, "关注成功！");
     }
 

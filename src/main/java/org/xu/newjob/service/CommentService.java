@@ -27,6 +27,10 @@ public class CommentService implements NewJobConstant {
         return commentMapper.selectCommentsByEntity(entityType, entityId, offset, limit);
     }
 
+    public Comment findCommentById(int id) {
+        return commentMapper.selectCommentById(id);
+    }
+
     public int findCommentCount(int entityType, int entityId) {
         return commentMapper.selectCountByEntity(entityType, entityId);
     }
