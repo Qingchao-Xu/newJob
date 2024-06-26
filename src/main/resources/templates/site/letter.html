@@ -27,8 +27,8 @@
 							</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link position-relative" href="notice.html">
-								系统通知<span class="badge badge-danger">27</span>
+							<a class="nav-link position-relative" th:href="@{/notice/list}">
+								系统通知<span class="badge badge-danger" th:text="${noticeUnreadCount}" th:if="${noticeUnreadCount!=0}">27</span>
 							</a>
 						</li>
 					</ul>
