@@ -5,7 +5,9 @@ newJob就业信息分享平台，旨在为高校学生与招聘公司提供更�
 **技术栈：Spring Boot、Redis、Kafka、ElasticSearch、SpringSecurity、Caffeine**
 
 ## 项目简介
+### 项目功能
 
+### 项目亮点
 
 ## 开发记录
 
@@ -506,6 +508,46 @@ Page类能够计算当前页的起始行，总的页数回前端能够显示的�
 3. 处理首页模板，消息显示总的未读数量。
 
 ### 引入ElasticSearch
+
+注：本项目代码对应 ES 8.10.4，尽量下载对应 ES 和分词版本，ES7 也可以。
+
+下载 ElasticSearch 并解压缩，修改 config 文件夹下的 elasticSearch 配置。
+
+配置集群的名字 cluster.name: newJob。配置 ES 数据存放的位置 path.data:。日志存放的路径 path.log:。配置ES的环境变量
+
+github 上下载ES的中文分词插件，elasticsearch ik。解压到 ES 目录，plugins文件夹下，ik文件夹中。
+
+ES8默认开启了 ssl 认证，不能直接连接。修改elasticsearch.yml配置文件： xpack.security.http.ssl:enabled 设置成 false，
+xpack.security.enabled 设置成false。 ES7 无需这一步配置。
+
+**1）Spring 整合 ElasticSearch**
+1. pom 中引入 ElasticSearch 依赖。
+2. 帖子实体类上添加 Document 注解，配置实体类对应的索引名字。
+3. 实体属性上添加注解，配置属性和ES中字段的对应关系。帖子标题和内容等可以被搜索的字段，需要配置存储时的分词器和搜索时的分词器。
+4. Dao 层，新建一个 repository 接口，继承与 ElasticSearchRepository
+5. 配置好之后，Spring 底层就可以帮助生成对应的 repository 实现类。
+
+
+**2）开发平台搜索功能**
+1. Service 层添加方法，调用 ES 的 repository 向 ES 中添加新的帖子。
+2. Service 层添加方法，调用 ES 的 repository 从 ES 中删除帖子。
+3. Service 层添加从 ES 搜索的方法，接收关键字、当前页、每页显示数量。
+   - 根据查询条件，构造 ES 的查询对象，searchQuery。
+   - 使用 ElasticSearchTemplate 进行查询，查询时创建匿名的 SearchResultMapper 使用高亮数据替换原数据。
+   - 替换时，先取到所有命中的数据，遍历命中的数据，构造一个新的帖子对象，查询的字段使用高亮结果替换原结果，然后封装并返回。
+   - 返回 ES 的 Page 列表。
+4. Controller 层发布帖子的方法中，添加发布发帖事件的逻辑。
+5. Controller 层的评论方法中，当评论帖子时，发布发帖事件。
+6. Kafka 消费者类中新增方法，监听发帖事件并消费。
+   - 获取到监听的 Event 对象
+   - 从 Event 对象中取出帖子 id，根据 id 从数据库查询出帖子对象。
+   - 调用 Service 层方法，将帖子添加到 ES 中。
+7. Controller 层添加方法，处理搜索的请求，接收搜索的关键字和 Page 对象。
+   - 调用 Service 层搜索方法，搜索帖子。
+   - 遍历查询到的帖子，找到帖子的作者、点赞的数量，聚合数据并放到 Model 中。
+   - 设置分页对象 Page 的信息。
+   - 返回模板的路径。
+8. 处理前端模板的展示
 
 ### 优化安全和性能
 

@@ -7,10 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.xu.newjob.entity.Comment;
-import org.xu.newjob.entity.DiscussPost;
-import org.xu.newjob.entity.Page;
-import org.xu.newjob.entity.User;
+import org.xu.newjob.entity.*;
+import org.xu.newjob.event.EventProducer;
 import org.xu.newjob.service.CommentService;
 import org.xu.newjob.service.DiscussPostService;
 import org.xu.newjob.service.LikeService;
@@ -35,6 +33,8 @@ public class DiscussPostController implements NewJobConstant {
     private HostHolder hostHolder;
     @Autowired
     private LikeService likeService;
+    @Autowired
+    private EventProducer eventProducer;
 
     @RequestMapping(path = "/add", method = RequestMethod.POST)
     @ResponseBody
@@ -49,6 +49,14 @@ public class DiscussPostController implements NewJobConstant {
         post.setContent(content);
         post.setCreateTime(new Date());
         discussPostService.addDiscussPost(post);
+
+        // 触发发帖事件，要把帖子和相关信息存到 ES 中
+        Event event = new Event()
+                .setTopic(TOPIC_PUBLISH)
+                .setUserId(user.getId())
+                .setEntityType(ENTITY_TYPE_POST)
+                .setEntityId(post.getId());
+        eventProducer.fireEvent(event);
 
         // 报错的情况，将来统一 处理
         return NewJobUtil.getJSONString(0, "发布成功！");

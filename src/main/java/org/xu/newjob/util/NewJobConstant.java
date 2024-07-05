@@ -58,6 +58,11 @@ public interface NewJobConstant {
     String TOPIC_FOLLOW = "follow";
 
     /**
+     * 事件：发帖
+     */
+    String TOPIC_PUBLISH = "publish";
+
+    /**
      * 系统用户id
      */
     int SYSTEM_USER_ID = 1;
