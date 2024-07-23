@@ -9,6 +9,11 @@ newJob就业信息分享平台，旨在为高校学生与招聘公司提供更�
 
 ### 项目亮点
 
+### 开发中遇到的问题
+
+引入 Spring Security 带来的一系列问题。由于要解决 HTTP 的无状态的缺陷，刚开始项目是使用拦截器来做的。后来项目想要引入 Security 来做权限控制。
+但是又不想放弃之前的登录的逻辑。
+
 ## 开发记录
 
 ### 平台首页
@@ -550,6 +555,27 @@ xpack.security.enabled 设置成false。 ES7 无需这一步配置。
 8. 处理前端模板的展示
 
 ### 优化安全和性能
+
+**1）引入 Spring Security，优化登录验证，实现权限控制**
+1. pom中加入 Spring Security 依赖。
+2. 取消之前检查登录的拦截器的配置。
+3. 配置 Security 配置类，配置两个 Bean
+   - WebSecurityCustomizer 配置对静态资源请求的忽略。
+   - SecurityFilterChain 构建，配置用户的权限，未登录或权限不足时的处理逻辑（通过 request 判断时异步还是同步请求，做不同的处理）。
+修改 Security 拦截的退出登录的路径，覆盖默认的拦截路径，因为默认的是 \logout，会影响之前退出的逻辑。
+4. UserService 中添加获得用户权限的方法，参数接收 userId。
+   - 根据 id 查询用户，根据用户的类型，返回用户的权限。
+5. 在 Security 配置类中，构建 SecurityFilterChain 时添加一个过滤器，调用 Service 中获得用户权限的方法，将用户权限存入 SecurityContext 中，
+便于 Security 进行授权。
+   - 判断凭证是否有效，有效的话，构建 Authentication，使用 SecurityContextHolder 将其存入 SecurityContext 中。
+6. 在退出的 Controller 方法中，以及请求结束的 ticket 拦截器中，清理 SecurityContext 中保存的用户权限。
+
+**2）Security 防止异步表单的CSRF攻击**
+
+页面的表单在生成和提交的时候，会自动携带一个 CSRF token，但是异步请求提交的不会自动生成。如果不处理，就无法通过 CSRF验证，导致说没有权限。
+
+1. 在含有异步请求的页面 header 中让 Security 生成一个 CSRF token。
+2. 在发送异步请求时，在请求头中携带生成的 CSRF token。
 
 
 ## 未来优化

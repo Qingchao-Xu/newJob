@@ -66,4 +66,19 @@ public interface NewJobConstant {
      * 系统用户id
      */
     int SYSTEM_USER_ID = 1;
+
+    /**
+     * 用户权限：普通用户
+     */
+    String AUTHORITY_USER = "user";
+
+    /**
+     * 用户权限：超级管理员
+     */
+    String AUTHORITY_ADMIN = "admin";
+
+    /**
+     * 用户权限：版主
+     */
+    String AUTHORITY_MODERATOR = "moderator";
 }

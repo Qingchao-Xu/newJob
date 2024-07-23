@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -13,10 +14,7 @@ import org.xu.newjob.entity.LoginTicket;
 import org.xu.newjob.entity.User;
 import org.xu.newjob.util.*;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -225,5 +223,22 @@ public class UserService implements NewJobConstant {
     private void clearCache(int userId) {
         String userKey = RedisKeyUtil.getUserKey(userId);
         redisTemplate.delete(userKey);
+    }
+
+    public Collection<? extends GrantedAuthority> getAuthorities(int userId) {
+        User user = this.findUserById(userId);
+        List<GrantedAuthority> list = new ArrayList<>();
+        list.add(new GrantedAuthority() {
+            @Override
+            public String getAuthority() {
+
+                return switch (user.getType()) {
+                    case 1 -> AUTHORITY_ADMIN;
+                    case 2 -> AUTHORITY_MODERATOR;
+                    default -> AUTHORITY_USER;
+                };
+            }
+        });
+        return list;
     }
 }
