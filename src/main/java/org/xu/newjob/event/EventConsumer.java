@@ -70,4 +70,14 @@ public class EventConsumer implements NewJobConstant {
         DiscussPost post = discussPostService.findDiscussPostById(event.getEntityId());
         elasticSearchService.saveDiscussPost(post);
     }
+
+    @KafkaListener(topics = {TOPIC_DELETE})
+    public void handleDeleteMessage(ConsumerRecord<String, Object> record) {
+        if (record == null || record.value() == null) {
+            logger.error("消息的内容为空！");
+            return;
+        }
+        Event event = (Event) record.value();
+        elasticSearchService.deleteDiscussPost(event.getEntityId());
+    }
 }

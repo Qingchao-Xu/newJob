@@ -84,7 +84,12 @@ public class SecurityConfig implements NewJobConstant {
                 "/unfollow").hasAnyAuthority(
                 AUTHORITY_USER,
                 AUTHORITY_ADMIN,
-                AUTHORITY_MODERATOR).anyRequest().permitAll());
+                AUTHORITY_MODERATOR).requestMatchers(
+                "/discuss/top",
+                "/discuss/wonderful").hasAnyAuthority(
+                AUTHORITY_MODERATOR).requestMatchers(
+                "/discuss/delete").hasAnyAuthority(
+                AUTHORITY_ADMIN).anyRequest().permitAll());
 //        http.csrf(AbstractHttpConfigurer::disable);
         // 权限不够时的处理
         http.exceptionHandling((e) -> e.authenticationEntryPoint(new AuthenticationEntryPoint() {
