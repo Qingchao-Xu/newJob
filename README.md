@@ -589,6 +589,23 @@ xpack.security.enabled 设置成false。 ES7 无需这一步配置。
 6. 在 Security 配置类中，配置置顶、加精、删除操作的权限。置顶加精只有版主可以使用，删除只有管理员可以使用。
 7. 引入 thymeleaf 支持 Security 的依赖（注意大版本对应），在前端使用，只有有权限的用户才去显示 置顶、加精、删除的按钮。
 
+**3）统计 UV 和 DAU**
+1. 定义创建 UV 和 DAU RedisKey 的方法。
+   - 单日 UV 和 AU 通过当天的日期拼接得到。
+   - 区间 UV 和 AU 通过开始日期和结束日期拼接得到。
+2. Service 层添加统计和查询 UV 和 AU 的方法
+   - 将指定 IP 计入 UV，通过 redisTemplate 实现。
+   - 统计指定范围内的 UV，从开始日期到结束日期的 统计结果进行合并，放到一个新的redisKey中，返回统计结果。
+   - 将用户 id 计入 DAU，通过 redisTemplate 实现。
+   - 统计指定范围内的 AU，从开始到结束日期的统计结果进行 OR 运算，得到一个新的结果，返回结果中为 true 的个数。
+3. 新建一个拦截器，重写 preHandler，在请求处理之前，调用 Service 层方法，统计UV和DAU。配置拦截器
+4. Controller 层添加访问统计页面的请求处理方法。
+5. Controller 层添加统计区间 UV 和统计区间 AU 的方法。接收开始日期，和结束日期
+   - 调用 Service 层方法进行统计。
+   - 统计结果放到 Model 中。
+   - 返回模板路径。
+6. 处理 thymeleaf 模板。
+7. 配置权限，只有管理员才可以查看 UV 和 DAU的统计。
 
 ## 未来优化
 

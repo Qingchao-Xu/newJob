@@ -88,7 +88,8 @@ public class SecurityConfig implements NewJobConstant {
                 "/discuss/top",
                 "/discuss/wonderful").hasAnyAuthority(
                 AUTHORITY_MODERATOR).requestMatchers(
-                "/discuss/delete").hasAnyAuthority(
+                "/discuss/delete",
+                "/data/**").hasAnyAuthority(
                 AUTHORITY_ADMIN).anyRequest().permitAll());
 //        http.csrf(AbstractHttpConfigurer::disable);
         // 权限不够时的处理
