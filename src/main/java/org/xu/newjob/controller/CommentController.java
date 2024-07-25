@@ -1,6 +1,7 @@
 package org.xu.newjob.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +14,7 @@ import org.xu.newjob.service.CommentService;
 import org.xu.newjob.service.DiscussPostService;
 import org.xu.newjob.util.HostHolder;
 import org.xu.newjob.util.NewJobConstant;
+import org.xu.newjob.util.RedisKeyUtil;
 
 import java.util.Date;
 
@@ -28,6 +30,8 @@ public class CommentController implements NewJobConstant {
     private DiscussPostService discussPostService;
     @Autowired
     private EventProducer eventProducer;
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     @RequestMapping(path = "/add/{discussPostId}", method = RequestMethod.POST)
     public String addComment(@PathVariable("discussPostId") int discussPostId, Comment comment) {
@@ -58,6 +62,10 @@ public class CommentController implements NewJobConstant {
               .setEntityType(ENTITY_TYPE_POST)
               .setEntityId(comment.getEntityId());
             eventProducer.fireEvent(event);
+
+            // 添加到缓存中，用于定时任务取出计算帖子分数
+            String scoreKey = RedisKeyUtil.getPostScoreKey();
+            redisTemplate.opsForSet().add(scoreKey, discussPostId);
         }
 
         return "redirect:/discuss/detail/" + discussPostId;

@@ -1,6 +1,7 @@
 package org.xu.newjob.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import org.xu.newjob.service.UserService;
 import org.xu.newjob.util.HostHolder;
 import org.xu.newjob.util.NewJobConstant;
 import org.xu.newjob.util.NewJobUtil;
+import org.xu.newjob.util.RedisKeyUtil;
 
 import java.util.*;
 
@@ -35,6 +37,8 @@ public class DiscussPostController implements NewJobConstant {
     private LikeService likeService;
     @Autowired
     private EventProducer eventProducer;
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     @RequestMapping(path = "/add", method = RequestMethod.POST)
     @ResponseBody
@@ -57,6 +61,10 @@ public class DiscussPostController implements NewJobConstant {
                 .setEntityType(ENTITY_TYPE_POST)
                 .setEntityId(post.getId());
         eventProducer.fireEvent(event);
+
+        // 添加到缓存中，用于定时任务取出计算帖子分数
+        String scoreKey = RedisKeyUtil.getPostScoreKey();
+        redisTemplate.opsForSet().add(scoreKey, post.getId());
 
         // 报错的情况，将来统一 处理
         return NewJobUtil.getJSONString(0, "发布成功！");
@@ -149,6 +157,10 @@ public class DiscussPostController implements NewJobConstant {
                 .setEntityType(ENTITY_TYPE_POST)
                 .setEntityId(id);
         eventProducer.fireEvent(event);
+
+        // 添加到缓存中，用于定时任务取出计算帖子分数
+        String scoreKey = RedisKeyUtil.getPostScoreKey();
+        redisTemplate.opsForSet().add(scoreKey, id);
 
         return NewJobUtil.getJSONString(0);
     }

@@ -1,6 +1,7 @@
 package org.xu.newjob.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -12,6 +13,7 @@ import org.xu.newjob.service.LikeService;
 import org.xu.newjob.util.HostHolder;
 import org.xu.newjob.util.NewJobConstant;
 import org.xu.newjob.util.NewJobUtil;
+import org.xu.newjob.util.RedisKeyUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +28,8 @@ public class LikeController implements NewJobConstant {
     private HostHolder hostHolder;
     @Autowired
     private EventProducer eventProducer;
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     @RequestMapping(value = "/like", method = RequestMethod.POST)
     @ResponseBody
@@ -48,6 +52,12 @@ public class LikeController implements NewJobConstant {
                     .setEntityUserId(entityUserId)
                     .setData("postId", postId);
             eventProducer.fireEvent(event);
+        }
+
+        if (entityId == ENTITY_TYPE_POST) {
+            // 添加到缓存中，用于定时任务取出计算帖子分数
+            String scoreKey = RedisKeyUtil.getPostScoreKey();
+            redisTemplate.opsForSet().add(scoreKey, postId);
         }
 
         return NewJobUtil.getJSONString(0, null, map);
